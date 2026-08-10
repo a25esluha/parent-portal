@@ -384,13 +384,12 @@ app.get('/announcements', checkAuth, async (req, res) => {
             let imageHtml = '';
             let actionButtonsHtml = '';
             
-            // Mendukung berbagai nama kolom dari excel (image, lampiran, atau file)
-            const rawUrl = (a.image || a.lampiran || a.file || '').trim();
+            // Mendukung kolom 'lampiran', 'image', atau 'file' dari Google Sheets
+            const rawUrl = (a.lampiran || a.image || a.file || '').trim();
             
             if (rawUrl !== '') {
                 let fileId = '';
                 
-                // Parser link Google Drive
                 if (rawUrl.includes('/file/d/')) {
                     const parts = rawUrl.split('/file/d/');
                     if (parts[1]) fileId = parts[1].split('/')[0];
@@ -415,7 +414,6 @@ app.get('/announcements', checkAuth, async (req, res) => {
                         </a>
                     </div>`;
                 } else {
-                    // Link umum / biasa
                     imageHtml = `<div class="mt-4"><img src="${rawUrl}" alt="Lampiran Pengumuman" class="rounded-xl max-h-80 w-auto object-cover border border-[#d8ded5]" onerror="this.parentElement.style.display='none'"></div>`;
                     
                     actionButtonsHtml = `
@@ -430,13 +428,16 @@ app.get('/announcements', checkAuth, async (req, res) => {
                 }
             }
 
+            // Memastikan baris baru / Enter dari Excel dirender rapi ke bawah
+            const contentText = String(a.content || '').replace(/\\n/g, '\n');
+
             cards += `
             <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-[#586b55] border-[#d8ded5] mb-5">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
                     <h3 class="font-bold text-lg text-[#363d34] flex items-center space-x-2"><span>📢</span><span>${a.title}</span></h3>
                     <span class="text-xs font-semibold bg-[#f0f2ef] text-[#717d6e] px-3 py-1 rounded-full border border-[#d8ded5]">${a.date}</span>
                 </div>
-                <p class="text-[#475644] text-sm leading-relaxed whitespace-pre-line">${a.content}</p>
+                <p class="text-[#475644] text-sm leading-relaxed whitespace-pre-wrap break-words">${contentText}</p>
                 ${imageHtml}
                 ${actionButtonsHtml}
             </div>`;
