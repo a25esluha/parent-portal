@@ -379,25 +379,75 @@ app.get('/announcements', checkAuth, async (req, res) => {
     try {
         const db = await fetchDb();
         let cards = '';
+        
         db.announcements.forEach(a => {
             let imageHtml = '';
-            if (a.image && a.image.trim() !== '') {
-                imageHtml = `<div class="mt-4"><img src="${a.image}" alt="Lampiran Pengumuman" class="rounded-xl max-h-96 w-auto object-cover border border-[#d8ded5]" onerror="this.parentElement.style.display='none'"></div>`;
+            let actionButtonsHtml = '';
+            
+            // Mendukung berbagai nama kolom dari excel (image, lampiran, atau file)
+            const rawUrl = (a.image || a.lampiran || a.file || '').trim();
+            
+            if (rawUrl !== '') {
+                let fileId = '';
+                
+                // Parser link Google Drive
+                if (rawUrl.includes('/file/d/')) {
+                    const parts = rawUrl.split('/file/d/');
+                    if (parts[1]) fileId = parts[1].split('/')[0];
+                } else if (rawUrl.includes('id=')) {
+                    const urlParams = new URLSearchParams(rawUrl.split('?')[1]);
+                    fileId = urlParams.get('id');
+                }
+
+                if (fileId) {
+                    const embedUrl = `https://lh3.googleusercontent.com/d/${fileId}`;
+                    const downloadUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+                    
+                    imageHtml = `<div class="mt-4"><img src="${embedUrl}" alt="Lampiran Pengumuman" class="rounded-xl max-h-80 w-auto object-cover border border-[#d8ded5]" onerror="this.parentElement.style.display='none'"></div>`;
+                    
+                    actionButtonsHtml = `
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <a href="${rawUrl}" target="_blank" class="inline-flex items-center space-x-2 bg-[#f0f4ee] hover:bg-[#e2e8df] text-[#586b55] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[#cbe3d1] transition">
+                            <span>📁</span><span>Buka di Google Drive</span>
+                        </a>
+                        <a href="${downloadUrl}" target="_blank" class="inline-flex items-center space-x-2 bg-[#586b55] hover:bg-[#475644] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition">
+                            <span>📥</span><span>Download Lampiran</span>
+                        </a>
+                    </div>`;
+                } else {
+                    // Link umum / biasa
+                    imageHtml = `<div class="mt-4"><img src="${rawUrl}" alt="Lampiran Pengumuman" class="rounded-xl max-h-80 w-auto object-cover border border-[#d8ded5]" onerror="this.parentElement.style.display='none'"></div>`;
+                    
+                    actionButtonsHtml = `
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <a href="${rawUrl}" target="_blank" class="inline-flex items-center space-x-2 bg-[#f0f4ee] hover:bg-[#e2e8df] text-[#586b55] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border border-[#cbe3d1] transition">
+                            <span>🔗</span><span>Buka Link</span>
+                        </a>
+                        <a href="${rawUrl}" download target="_blank" class="inline-flex items-center space-x-2 bg-[#586b55] hover:bg-[#475644] text-white px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-sm transition">
+                            <span>📥</span><span>Download Lampiran</span>
+                        </a>
+                    </div>`;
+                }
             }
 
             cards += `
-            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5] mb-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
-                    <h3 class="font-bold text-base sm:text-lg text-[#586b55]">${a.title}</h3>
-                    <span class="text-xs font-medium bg-[#f0f2ef] text-[#717d6e] px-3 py-1 rounded-full border border-[#d8ded5]">${a.date}</span>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-[#586b55] border-[#d8ded5] mb-5">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+                    <h3 class="font-bold text-lg text-[#363d34] flex items-center space-x-2"><span>📢</span><span>${a.title}</span></h3>
+                    <span class="text-xs font-semibold bg-[#f0f2ef] text-[#717d6e] px-3 py-1 rounded-full border border-[#d8ded5]">${a.date}</span>
                 </div>
-                <p class="text-[#475644] text-xs sm:text-sm leading-relaxed">${a.content}</p>
+                <p class="text-[#475644] text-sm leading-relaxed whitespace-pre-line">${a.content}</p>
                 ${imageHtml}
+                ${actionButtonsHtml}
             </div>`;
         });
+
         const content = `
-        <div class="mb-6"><h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Pengumuman</h2><p class="text-xs sm:text-sm text-[#717d6e]">Pengumuman dari pihak sekolah.</p></div>
-        <div>${cards}</div>
+        <div class="mb-6">
+            <h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Pengumuman Sekolah</h2>
+            <p class="text-xs sm:text-sm text-[#717d6e]">Informasi dan pengumuman resmi dari pihak sekolah untuk walimurid kelas 2A.</p>
+        </div>
+        <div class="space-y-4">${cards}</div>
         <div class="mt-6"><a href="/dashboard" class="inline-flex items-center text-[#586b55] hover:text-[#363d34] text-sm font-semibold">&larr; Kembali ke Beranda</a></div>`;
         res.send(layout('Pengumuman', content));
     } catch (e) { res.status(500).send("Error"); }
