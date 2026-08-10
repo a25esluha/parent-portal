@@ -48,7 +48,7 @@ const layout = (title, content) => `
     <main class="max-w-6xl mx-auto p-4 sm:p-6 flex-grow w-full">
         ${content}
     </main>
-    <footer class="text-center py-6 text-xs text-[#717d6e] border-t border-[#e2e8df] bg-[#ebeeea]">Portal Walimurid Kelas 2A &copy; 2026</footer>
+    <footer class="text-center py-6 text-xs text-[#717d6e] border-t border-[#e2e8df] bg-[#ebeeea]">Portal Walimurid Kelas 2A &copy; 2026 Dhiya</footer>
 </body>
 </html>
 `;
@@ -62,12 +62,12 @@ app.get('/login', (req, res) => {
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md border border-[#d8ded5]">
             <div class="text-center mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold text-[#586b55] mt-2">Portal Walimurid Kelas 2A</h1>
-                <p class="text-xs sm:text-sm text-[#717d6e] mt-1">Input nama siswa</p>
+                <p class="text-xs sm:text-sm text-[#717d6e] mt-1">Assalamualaikum, selamat datang Ayah Bunda. Mohon untuk mengisikan Username dan Password</p>
             </div>
             <form action="/login" method="POST" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-[#475644] mb-1">Nama siswa</label>
-                    <input type="text" name="first_name" required class="w-full px-4 py-3 border border-[#cbd5c8] rounded-xl focus:ring-2 focus:ring-[#586b55] outline-none text-base transition" placeholder="Input nama siswa">
+                    <label class="block text-sm font-semibold text-[#475644] mb-1">Username</label>
+                    <input type="text" name="first_name" required class="w-full px-4 py-3 border border-[#cbd5c8] rounded-xl focus:ring-2 focus:ring-[#586b55] outline-none text-base transition" placeholder="Input nama depan siswa">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-[#475644] mb-1">Password</label>
@@ -93,7 +93,7 @@ app.post('/login', async (req, res) => {
             res.setHeader('Set-Cookie', `sessionId=${sessionId}; Path=/`);
             res.redirect('/dashboard');
         } else {
-            res.send(`<script>alert('Nama Depan atau Password salah!'); window.location.href='/login';</script>`);
+            res.send(`<script>alert('Username atau Password salah!'); window.location.href='/login';</script>`);
         }
     } catch (err) { res.status(500).send("Error connecting to database"); }
 });
@@ -276,22 +276,27 @@ app.get('/kas', checkAuth, async (req, res) => {
         const db = await fetchDb();
         const userKas = db.kas.filter(k => String(k.user_id) === String(req.user.id));
         
-        const academicMonths = [
-            "August 2025", "September 2025", "October 2025", "November 2025", "December 2025",
-            "January 2026", "February 2026", "March 2026", "April 2026", "May 2026", "June 2026", "July 2026"
+        const period = req.query.period || 'sem1';
+
+        const sem1Months = [
+            "August 2025", "September 2025", "October 2025", "November 2025", "December 2025", "January 2026"
+        ];
+        const sem2Months = [
+            "February 2026", "March 2026", "April 2026", "May 2026", "June 2026", "July 2026"
         ];
 
-        let rows = '';
-        
-        // 1. Render Kas Bulanan
-        academicMonths.forEach(m => {
-            const found = userKas.find(k => String(k.month).trim().toLowerCase() === m.toLowerCase());
-            const status = (found && String(found.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
-            const badge = status === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
-            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${m}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${status}</span></td></tr>`;
-        });
+        let targetMonths = [];
+        if (period === 'sem2') {
+            targetMonths = sem2Months;
+        } else if (period === 'all') {
+            targetMonths = [...sem1Months, ...sem2Months];
+        } else {
+            targetMonths = sem1Months;
+        }
 
-        // 2. Render Iuran Kaos
+        let rows = '';
+
+        // 1. Iuran Kaos (Dibuat Paling Atas)
         const kaosFound = userKas.find(k => {
             const mName = String(k.month).trim().toLowerCase();
             return mName === 'iuran kaos' || mName === 'kaos';
@@ -300,8 +305,28 @@ app.get('/kas', checkAuth, async (req, res) => {
         const kaosBadge = kaosStatus === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
         rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">Iuran Kaos</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${kaosStatus}</span></td></tr>`;
 
+        // 2. Render Kas Bulanan Berdasarkan Filter
+        targetMonths.forEach(m => {
+            const found = userKas.find(k => String(k.month).trim().toLowerCase() === m.toLowerCase());
+            const status = (found && String(found.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
+            const badge = status === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
+            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${m}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${status}</span></td></tr>`;
+        });
+
         const content = `
-        <div class="mb-6"><h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2><p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda.</p></div>
+        <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#d8ded5]">
+            <div>
+                <h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda.</p>
+            </div>
+            <form method="GET" class="w-full md:w-auto">
+                <select name="period" onchange="this.form.submit()" class="border border-[#cbd5c8] px-4 py-2 rounded-xl text-sm font-medium bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55] cursor-pointer w-full md:w-auto">
+                    <option value="sem1" ${period === 'sem1' ? 'selected' : ''}>Semester 1 (Agu 2025 - Jan 2026)</option>
+                    <option value="sem2" ${period === 'sem2' ? 'selected' : ''}>Semester 2 (Feb 2026 - Jul 2026)</option>
+                    <option value="all" ${period === 'all' ? 'selected' : ''}>Semua Periode (Agu 2025 - Jul 2026)</option>
+                </select>
+            </form>
+        </div>
         <div class="bg-white rounded-2xl shadow-sm border border-[#d8ded5] overflow-hidden max-w-xl">
             <table class="w-full text-left text-sm">
                 <thead><tr class="bg-[#f0f2ef] text-[#717d6e] text-xs uppercase tracking-wider border-b border-[#d8ded5]"><th class="py-3 px-6">Keterangan / Bulan</th><th class="py-3 px-6">Status</th></tr></thead>
