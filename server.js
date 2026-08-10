@@ -62,12 +62,12 @@ app.get('/login', (req, res) => {
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md border border-[#d8ded5]">
             <div class="text-center mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold text-[#586b55] mt-2">Portal Walimurid Kelas 2A</h1>
-                <p class="text-xs sm:text-sm text-[#717d6e] mt-1">Input nama depan (first name) siswa/i dan password</p>
+                <p class="text-xs sm:text-sm text-[#717d6e] mt-1">Input nama siswa</p>
             </div>
             <form action="/login" method="POST" class="space-y-4">
                 <div>
-                    <label class="block text-sm font-semibold text-[#475644] mb-1">First Name</label>
-                    <input type="text" name="first_name" required class="w-full px-4 py-3 border border-[#cbd5c8] rounded-xl focus:ring-2 focus:ring-[#586b55] outline-none text-base transition" placeholder="nama siswa/i">
+                    <label class="block text-sm font-semibold text-[#475644] mb-1">Nama siswa</label>
+                    <input type="text" name="first_name" required class="w-full px-4 py-3 border border-[#cbd5c8] rounded-xl focus:ring-2 focus:ring-[#586b55] outline-none text-base transition" placeholder="Input nama siswa">
                 </div>
                 <div>
                     <label class="block text-sm font-semibold text-[#475644] mb-1">Password</label>
@@ -116,14 +116,14 @@ app.get('/dashboard', checkAuth, (req, res) => {
             <div class="bg-[#f0f4ee] text-[#586b55] p-3 sm:p-4 rounded-xl text-2xl sm:text-3xl group-hover:bg-[#586b55] group-hover:text-white transition">📅</div>
             <div>
                 <h3 class="font-bold text-base sm:text-lg text-[#363d34] group-hover:text-[#586b55] transition">Kalendar Akademik</h3>
-                <p class="text-xs sm:text-sm text-[#717d6e]">Agenda kelas dan catatan jadwal pribadi siswa/siswi.</p>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Agenda kelas dan catatan jadwal pribadi siswa.</p>
             </div>
         </a>
         <a href="/kas" class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition border border-[#d8ded5] flex items-center space-x-4 sm:space-x-5 group">
             <div class="bg-[#f0f4ee] text-[#586b55] p-3 sm:p-4 rounded-xl text-2xl sm:text-3xl group-hover:bg-[#586b55] group-hover:text-white transition">💵</div>
             <div>
                 <h3 class="font-bold text-base sm:text-lg text-[#363d34] group-hover:text-[#586b55] transition">Iuran Kas Siswa</h3>
-                <p class="text-xs sm:text-sm text-[#717d6e]">Pembayaran kas pribadi setiap siswa/i.</p>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Pembayaran kas pribadi setiap siswa.</p>
             </div>
         </a>
         <a href="/finances" class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm hover:shadow-md transition border border-[#d8ded5] flex items-center space-x-4 sm:space-x-5 group">
@@ -151,8 +151,8 @@ app.get('/calendar', checkAuth, async (req, res) => {
         const year = req.query.year || currentDate.getFullYear();
         const month = req.query.month || String(currentDate.getMonth() + 1).padStart(2, '0');
         
+        const firstDayIndex = new Date(year, month - 1, 1).getDay();
         const totalDays = new Date(year, month, 0).getDate();
-        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
         const userNotes = db.notes ? db.notes.filter(n => String(n.user_id) === String(req.user.id) && String(n.note_date).startsWith(`${year}-${month}`)) : [];
         const notesMap = {};
@@ -162,13 +162,14 @@ app.get('/calendar', checkAuth, async (req, res) => {
         const eventsMap = {};
         globalEvents.forEach(e => { eventsMap[e.date] = e; });
 
-        let calendarCards = '';
+        let calendarCells = '';
+        for (let i = 0; i < firstDayIndex; i++) {
+            calendarCells += `<div class="bg-[#f0f2ef] min-h-[140px] rounded-xl border border-dashed border-[#d8ded5]"></div>`;
+        }
+
         for (let d = 1; d <= totalDays; d++) {
             const dayStr = String(d).padStart(2, '0');
             const dateKey = `${year}-${month}-${dayStr}`;
-            const dateObj = new Date(year, month - 1, d);
-            const dayName = dayNames[dateObj.getDay()];
-            
             const existingNote = notesMap[dateKey] || '';
             const globalEvent = eventsMap[dateKey];
             const isToday = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}` === dateKey;
@@ -176,27 +177,23 @@ app.get('/calendar', checkAuth, async (req, res) => {
             let eventHtml = '';
             if (globalEvent) {
                 eventHtml = `
-                <div class="mb-3 p-3 bg-[#fef9e7] border border-[#f5db8c] rounded-xl shadow-sm">
-                    <span class="text-xs font-bold text-[#946200] uppercase block tracking-wider">📌 Agenda Kelas: ${globalEvent.title}</span>
-                    <p class="text-xs sm:text-sm text-[#614000] mt-1 leading-relaxed">${globalEvent.description}</p>
+                <div class="mb-2 p-2 bg-[#fef9e7] border border-[#f5db8c] rounded-xl shadow-sm">
+                    <span class="text-[10px] font-bold text-[#946200] uppercase block tracking-wider">📌 ${globalEvent.title}</span>
+                    <p class="text-[11px] text-[#614000] mt-0.5 leading-tight">${globalEvent.description}</p>
                 </div>`;
             }
 
-            calendarCards += `
-            <div class="bg-white p-4 sm:p-5 rounded-2xl border ${isToday ? 'border-[#586b55] ring-2 ring-[#d8ded5] shadow-md' : 'border-[#cbd5c8]'} shadow-sm mb-4">
-                <div class="flex justify-between items-center mb-2">
-                    <div class="flex items-center space-x-3">
-                        <span class="font-bold text-base sm:text-lg ${isToday ? 'bg-[#586b55] text-white w-10 h-10 rounded-full flex items-center justify-center shadow-sm' : 'text-[#363d34] bg-[#f0f2ef] w-10 h-10 rounded-full flex items-center justify-center'}">${d}</span>
-                        <div>
-                            <span class="font-semibold text-sm sm:text-base text-[#363d34]">${dayName}, ${dateKey}</span>
-                            ${isToday ? '<span class="ml-2 text-xs bg-[#e8f2ec] text-[#2e6930] px-2 py-0.5 rounded-full font-bold">Hari Ini</span>' : ''}
-                        </div>
+            calendarCells += `
+            <div class="bg-white p-3 rounded-2xl border ${isToday ? 'border-[#586b55] ring-2 ring-[#d8ded5] shadow-md' : 'border-[#cbd5c8]'} shadow-sm flex flex-col justify-between min-h-[160px]">
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-bold text-sm ${isToday ? 'bg-[#586b55] text-white w-7 h-7 rounded-full flex items-center justify-center' : 'text-[#363d34]'}">${d}</span>
+                        <span class="text-[10px] font-bold text-[#586b55]">${dateKey}</span>
                     </div>
+                    ${eventHtml}
                 </div>
-                ${eventHtml}
-                <div class="mt-3">
-                    <label class="block text-xs font-semibold text-[#717d6e] mb-1">Catatan Pribadi Siswa:</label>
-                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs sm:text-sm p-3 border border-[#cbd5c8] rounded-xl resize-none focus:ring-2 focus:ring-[#586b55] outline-none bg-[#fcfdfc] focus:bg-white transition" placeholder="Tulis catatan harian di sini...">${existingNote}</textarea>
+                <div class="mt-2">
+                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs p-2 border border-[#cbd5c8] rounded-xl resize-none focus:ring-2 focus:ring-[#586b55] outline-none bg-[#fcfdfc] focus:bg-white transition" placeholder="Catatan pribadi...">${existingNote}</textarea>
                 </div>
             </div>`;
         }
@@ -214,9 +211,8 @@ app.get('/calendar', checkAuth, async (req, res) => {
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#d8ded5]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Kalendar Akademik Tahun Ajaran 2026/2027</h2>
-                <p class="text-xs sm:text-sm text-[#717d6e]">Agenda kelas dan catatan jadwal pribadi siswa/siswi.</p>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Agenda kelas dan catatan jadwal pribadi siswa.</p>
             </div>
-            <!-- Auto-submit saat bulan atau tahun diganti (tanpa tombol lihat) -->
             <form method="GET" class="flex flex-wrap items-center gap-2 sm:space-x-3 w-full md:w-auto">
                 <select name="month" onchange="this.form.submit()" class="border border-[#cbd5c8] px-4 py-2 rounded-xl text-sm font-medium bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55] cursor-pointer">${monthOptions}</select>
                 <input type="number" name="year" value="${year}" onchange="this.form.submit()" class="border border-[#cbd5c8] px-3 py-2 rounded-xl text-sm font-medium w-28 bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55]">
@@ -227,12 +223,25 @@ app.get('/calendar', checkAuth, async (req, res) => {
             <input type="hidden" name="year" value="${year}">
             <input type="hidden" name="month" value="${month}">
             
-            <div class="space-y-4">
-                ${calendarCards}
+            <div class="bg-white rounded-2xl shadow-sm border border-[#d8ded5] p-4 sm:p-6 overflow-x-auto">
+                <div class="min-w-[700px]">
+                    <div class="grid grid-cols-7 gap-3 mb-3 text-center font-black text-xs text-[#475644] uppercase tracking-wider">
+                        <div class="text-red-600 font-bold">Sun</div>
+                        <div class="font-bold">Mon</div>
+                        <div class="font-bold">Tue</div>
+                        <div class="font-bold">Wed</div>
+                        <div class="font-bold">Thu</div>
+                        <div class="font-bold">Fri</div>
+                        <div class="text-red-600 font-bold">Sat</div>
+                    </div>
+                    <div class="grid grid-cols-7 gap-3">
+                        ${calendarCells}
+                    </div>
+                </div>
             </div>
 
             <div class="mt-6 flex justify-end">
-                <button type="submit" class="w-full sm:w-auto bg-[#586b55] hover:bg-[#475644] text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition">💾 Simpan jadwal pribadi siswa/i</button>
+                <button type="submit" class="w-full sm:w-auto bg-[#586b55] hover:bg-[#475644] text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md transition">💾 Simpan jadwal pribadi siswa</button>
             </div>
         </form>
 
@@ -266,16 +275,36 @@ app.get('/kas', checkAuth, async (req, res) => {
     try {
         const db = await fetchDb();
         const userKas = db.kas.filter(k => String(k.user_id) === String(req.user.id));
+        
+        const academicMonths = [
+            "August 2025", "September 2025", "October 2025", "November 2025", "December 2025",
+            "January 2026", "February 2026", "March 2026", "April 2026", "May 2026", "June 2026", "July 2026"
+        ];
+
         let rows = '';
-        userKas.forEach(k => {
-            const badge = k.status === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
-            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${k.month} 2026</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${k.status}</span></td></tr>`;
+        
+        // 1. Render Kas Bulanan
+        academicMonths.forEach(m => {
+            const found = userKas.find(k => String(k.month).trim().toLowerCase() === m.toLowerCase());
+            const status = (found && String(found.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
+            const badge = status === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
+            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${m}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${status}</span></td></tr>`;
         });
+
+        // 2. Render Iuran Kaos
+        const kaosFound = userKas.find(k => {
+            const mName = String(k.month).trim().toLowerCase();
+            return mName === 'iuran kaos' || mName === 'kaos';
+        });
+        const kaosStatus = (kaosFound && String(kaosFound.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
+        const kaosBadge = kaosStatus === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
+        rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">Iuran Kaos</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${kaosStatus}</span></td></tr>`;
+
         const content = `
-        <div class="mb-6"><h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2><p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas ananda.</p></div>
+        <div class="mb-6"><h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2><p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda.</p></div>
         <div class="bg-white rounded-2xl shadow-sm border border-[#d8ded5] overflow-hidden max-w-xl">
             <table class="w-full text-left text-sm">
-                <thead><tr class="bg-[#f0f2ef] text-[#717d6e] text-xs uppercase tracking-wider border-b border-[#d8ded5]"><th class="py-3 px-6">Bulan</th><th class="py-3 px-6">Status</th></tr></thead>
+                <thead><tr class="bg-[#f0f2ef] text-[#717d6e] text-xs uppercase tracking-wider border-b border-[#d8ded5]"><th class="py-3 px-6">Keterangan / Bulan</th><th class="py-3 px-6">Status</th></tr></thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>
