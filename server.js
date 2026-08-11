@@ -85,18 +85,30 @@ const layout = (title, content) => `
 </html>
 `;
 
+// Halaman Login dengan Loading Overlay saat tombol Masuk ditekan
 app.get('/login', (req, res) => {
     res.send(`
     <!DOCTYPE html>
     <html lang="id">
-    <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Login - Portal Walimurid Kelas 2A</title><script src="https://cdn.tailwindcss.com"></script></head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login - Portal Walimurid Kelas 2A</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
     <body class="bg-[#f5f7f4] flex items-center justify-center min-h-screen px-4">
+        <!-- Pop up Loading Login -->
+        <div id="login-loading" class="fixed inset-0 bg-[#f5f7f4] flex flex-col items-center justify-center z-[9999]" style="display: none;">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#586b55]"></div>
+            <p class="mt-4 text-[#586b55] font-bold text-lg animate-pulse">Mohon tunggu sebentar...</p>
+        </div>
+
         <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md border border-[#d8ded5]">
             <div class="text-center mb-6">
                 <h1 class="text-xl sm:text-2xl font-bold text-[#586b55] mt-2">Portal Walimurid Kelas 2A</h1>
                 <p class="text-xs sm:text-sm text-[#717d6e] mt-1">Assalamualaikum, selamat datang Ayah Bunda. Mohon untuk mengisikan Username dan Password</p>
             </div>
-            <form action="/login" method="POST" class="space-y-4">
+            <form action="/login" method="POST" class="space-y-4" onsubmit="document.getElementById('login-loading').style.display='flex';">
                 <div>
                     <label class="block text-sm font-semibold text-[#475644] mb-1">Username</label>
                     <input type="text" name="first_name" required class="w-full px-4 py-3 border border-[#cbd5c8] rounded-xl focus:ring-2 focus:ring-[#586b55] outline-none text-base transition" placeholder="Input nama depan siswa">
@@ -411,7 +423,7 @@ app.get('/finances', checkAuth, async (req, res) => {
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
             <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Pemasukan</span><h3 class="text-xl sm:text-2xl font-black text-[#2e6930] mt-1">Rp ${totalIncome.toLocaleString()}</h3></div>
             <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Pengeluaran</span><h3 class="text-xl sm:text-2xl font-black text-[#b33a3a] mt-1">Rp ${totalExpense.toLocaleString()}</h3></div>
-            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Saldo Saat Ini</span><h3 class="text-xl sm:text-2xl font-black text-[#586b55] mt-1">Rp ${balance.toLocaleString()}</h3></div>
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Saldo</span><h3 class="text-xl sm:text-2xl font-black text-[#586b55] mt-1">Rp ${balance.toLocaleString()}</h3></div>
         </div>
         <div class="bg-white rounded-2xl shadow-sm border border-[#d8ded5] overflow-x-auto">
             <table class="w-full text-left min-w-[600px]">
@@ -500,9 +512,8 @@ app.get('/announcements', checkAuth, async (req, res) => {
     } catch (e) { res.status(500).send("Error"); }
 });
 
-// Fitur Ganti Password
 app.get('/change-password', checkAuth, (req, res) => {
-    const content = `
+    const context = `
     <div class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-sm border border-[#d8ded5]">
         <h2 class="text-xl font-bold text-[#363d34] mb-6">Ganti Password</h2>
         <form action="/change-password" method="POST" class="space-y-4">
@@ -518,7 +529,7 @@ app.get('/change-password', checkAuth, (req, res) => {
         </form>
         <div class="mt-6"><a href="/dashboard" class="text-[#586b55] font-semibold">&larr; Kembali ke Beranda</a></div>
     </div>`;
-    res.send(layout('Ganti Password', content));
+    res.send(layout('Ganti Password', context));
 });
 
 app.post('/change-password', checkAuth, async (req, res) => {
