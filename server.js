@@ -5,9 +5,9 @@ app.get('/kas', checkAuth, async (req, res) => {
         
         const period = req.query.period || 'sem1';
 
-        // Daftar bulan murni (sesuai ketikan Anda di spreadsheet)
-        const sem1Months = ["Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-        const sem2Months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli"];
+        // Daftar kunci pencarian ke spreadsheet
+        const sem1Months = ["Juli 2026", "Agustus", "September", "Oktober", "November", "Desember"];
+        const sem2Months = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli 2027"];
 
         let targetMonths = [];
         if (period === 'sem2') {
@@ -35,23 +35,26 @@ app.get('/kas', checkAuth, async (req, res) => {
         
         rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">Iuran Kaos</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td></tr>`;
 
-        // 2. Render Kas Bulanan (Otomatis menambahkan tahun 2026 untuk Semester 1, dan 2027 untuk Semester 2)
+        // 2. Render Kas Bulanan
         targetMonths.forEach((m, index) => {
-            const found = userKas.find(k => String(k.month || '').trim().toLowerCase() === m.toLowerCase());
+            // Cek pencocokan apakah di spreadsheet tertulis "Juli 2026", "Juli 2027", atau cukup "Agustus", dll.
+            const found = userKas.find(k => {
+                const sheetMonth = String(k.month || '').trim().toLowerCase();
+                const targetLower = m.toLowerCase();
+                return sheetMonth === targetLower;
+            });
+
             const paid = isPaid(found?.status);
             const badge = paid ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
             
-            // Tentukan tahun otomatis: Juli-Desember 2026, Januari-Juli 2027
-            let year = "2026";
-            if (period === 'sem2') {
-                year = "2027";
-            } else if (period === 'all') {
-                year = index >= 6 ? "2027" : "2026"; // Setelah 6 bulan pertama masuk ke 2027
-            } else {
-                year = "2026";
+            // Tampilan label di web (jika di target hanya "Agustus", otomatis web menampilkan "Agustus 2026")
+            let displayLabel = m;
+            if (!m.includes("2026") && !m.includes("2027")) {
+                let year = (period === 'sem2' || (period === 'all' && index >= 6)) ? "2027" : "2026";
+                displayLabel = `${m} ${year}`;
             }
 
-            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${m} ${year}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td></tr>`;
+            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${displayLabel}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td></tr>`;
         });
 
         const content = `
@@ -64,7 +67,7 @@ app.get('/kas', checkAuth, async (req, res) => {
                 <select name="period" onchange="this.form.submit()" class="border border-[#cbd5c8] px-4 py-2 rounded-xl text-sm font-medium bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55] cursor-pointer w-full md:w-auto">
                     <option value="sem1" ${period === 'sem1' ? 'selected' : ''}>Semester 1 (Juli - Desember 2026)</option>
                     <option value="sem2" ${period === 'sem2' ? 'selected' : ''}>Semester 2 (Januari - Juli 2027)</option>
-                    <option value="all" ${period === 'all' ? 'selected' : ''}>Semua Periode (2026 - 2027)</option>
+                    <option value="all" ${period === 'all' ? 'selected' : ''}>Semua Periode</option>
                 </select>
             </form>
         </div>
