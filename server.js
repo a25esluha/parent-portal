@@ -279,10 +279,10 @@ app.get('/kas', checkAuth, async (req, res) => {
         const period = req.query.period || 'sem1';
 
         const sem1Months = [
-            "August 2026", "September 2026", "October 2026", "November 2026", "December 2026", "January 2027"
+            "July 2026", "August 2026", "September 2026", "October 2026", "November 2026", "December 2026"
         ];
         const sem2Months = [
-            "February 2027", "March 2027", "April 2027", "May 2027", "June 2027", "July 2027"
+            "January 2027", "February 2027", "March 2027", "April 2027", "May 2027", "June 2027", "July 2027"
         ];
 
         let targetMonths = [];
@@ -317,13 +317,13 @@ app.get('/kas', checkAuth, async (req, res) => {
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#d8ded5]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2>
-                <p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda periode 2026-2027.</p>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda periode Juli 2026 - Juli 2027.</p>
             </div>
             <form method="GET" class="w-full md:w-auto">
                 <select name="period" onchange="this.form.submit()" class="border border-[#cbd5c8] px-4 py-2 rounded-xl text-sm font-medium bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55] cursor-pointer w-full md:w-auto">
-                    <option value="sem1" ${period === 'sem1' ? 'selected' : ''}>Semester 1 (Agu 2026 - Jan 2027)</option>
-                    <option value="sem2" ${period === 'sem2' ? 'selected' : ''}>Semester 2 (Feb 2027 - Jul 2027)</option>
-                    <option value="all" ${period === 'all' ? 'selected' : ''}>Semua Periode (Agu 2026 - Jul 2027)</option>
+                    <option value="sem1" ${period === 'sem1' ? 'selected' : ''}>Semester 1 (Jul 2026 - Des 2026)</option>
+                    <option value="sem2" ${period === 'sem2' ? 'selected' : ''}>Semester 2 (Jan 2027 - Jul 2027)</option>
+                    <option value="all" ${period === 'all' ? 'selected' : ''}>Semua Periode (Jul 2026 - Jul 2027)</option>
                 </select>
             </form>
         </div>
@@ -384,7 +384,6 @@ app.get('/announcements', checkAuth, async (req, res) => {
             let imageHtml = '';
             let actionButtonsHtml = '';
             
-            // Mendukung kolom 'lampiran', 'image', atau 'file' dari Google Sheets
             const rawUrl = (a.lampiran || a.image || a.file || '').trim();
             
             if (rawUrl !== '') {
@@ -428,7 +427,6 @@ app.get('/announcements', checkAuth, async (req, res) => {
                 }
             }
 
-            // Memastikan baris baru / Enter dari Excel dirender rapi ke bawah
             const contentText = String(a.content || '').replace(/\\n/g, '\n');
 
             cards += `
