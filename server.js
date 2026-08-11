@@ -44,6 +44,44 @@ function checkAuth(req, res, next) {
     }
 }
 
+// Daftar Hari Libur Nasional Indonesia (Referensi 2026 & 2027)
+const nationalHolidays = {
+    "2026-01-01": "Tahun Baru Masehi",
+    "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
+    "2026-02-17": "Tahun Baru Imlek",
+    "2026-03-19": "Hari Suci Nyepi",
+    "2026-03-20": "Hari Raya Idul Fitri",
+    "2026-03-21": "Hari Raya Idul Fitri",
+    "2026-04-03": "Wafat Yesus Kristus",
+    "2026-04-05": "Kebangkitan Yesus Kristus (Paskah)",
+    "2026-05-01": "Hari Buruh Internasional",
+    "2026-05-14": "Kenaikan Yesus Kristus",
+    "2026-05-27": "Hari Raya Idul Adha",
+    "2026-05-31": "Hari Raya Waisak",
+    "2026-06-01": "Hari Lahir Pancasila",
+    "2026-06-16": "Tahun Baru Islam",
+    "2026-08-17": "Hari Kemerdekaan RI",
+    "2026-08-24": "Maulid Nabi Muhammad SAW",
+    "2026-12-25": "Hari Raya Natal",
+    "2027-01-01": "Tahun Baru Masehi",
+    "2027-01-05": "Isra Mikraj Nabi Muhammad SAW",
+    "2027-02-06": "Tahun Baru Imlek",
+    "2027-03-08": "Hari Suci Nyepi",
+    "2027-03-10": "Hari Raya Idul Fitri",
+    "2027-03-11": "Hari Raya Idul Fitri",
+    "2027-03-26": "Wafat Yesus Kristus",
+    "2027-03-28": "Paskah",
+    "2027-05-01": "Hari Buruh Internasional",
+    "2027-05-06": "Kenaikan Yesus Kristus",
+    "2027-05-16": "Hari Raya Idul Adha",
+    "2027-05-20": "Hari Raya Waisak",
+    "2027-06-01": "Hari Lahir Pancasila",
+    "2027-06-06": "Tahun Baru Islam",
+    "2027-08-17": "Hari Kemerdekaan RI",
+    "2027-09-04": "Maulid Nabi Muhammad SAW",
+    "2027-12-25": "Hari Raya Natal"
+};
+
 const layout = (title, content) => `
 <!DOCTYPE html>
 <html lang="id">
@@ -214,7 +252,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
 
         let calendarCells = '';
         for (let i = 0; i < firstDayIndex; i++) {
-            calendarCells += `<div class="bg-[#f8fafc] min-h-[140px] rounded-xl border border-dashed border-[#cbd5e1]"></div>`;
+            calendarCells += `<div class="bg-[#f8fafc] min-h-[150px] rounded-2xl border border-dashed border-[#cbd5e1]"></div>`;
         }
 
         for (let d = 1; d <= totalDays; d++) {
@@ -222,28 +260,41 @@ app.get('/calendar', checkAuth, async (req, res) => {
             const dateKey = `${year}-${month}-${dayStr}`;
             const existingNote = notesMap[dateKey] || '';
             const globalEvent = eventsMap[dateKey];
+            const holidayName = nationalHolidays[dateKey];
+            const dayOfWeek = new Date(year, month - 1, d).getDay(); // 0 = Minggu
+            const isSunday = (dayOfWeek === 0);
             const isToday = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}` === dateKey;
+
+            // Jika ada agenda (catatan pribadi atau event sekolah), block satu kotak dengan warna hijau muda soft
+            const hasAgenda = (existingNote.trim() !== '' || globalEvent);
+            const cellBgClass = hasAgenda ? 'bg-[#e8f5e9] border-[#a3e635]' : (isToday ? 'bg-white border-[#2f6636] ring-2 ring-[#a3e635]/30 shadow-md' : 'bg-white border-[#cbd5e1]');
 
             let eventHtml = '';
             if (globalEvent) {
-                eventHtml = `
-                <div class="mb-2 p-2 bg-[#fef3c7] border border-[#fde047] rounded-xl shadow-sm">
-                    <span class="text-[10px] font-bold text-[#b45309] uppercase block tracking-wider">📌 ${globalEvent.title}</span>
-                    <p class="text-[11px] text-[#78350f] mt-0.5 leading-tight">${globalEvent.description}</p>
+                eventHtml += `
+                <div class="mb-1 p-1.5 bg-[#dcfce7] border border-[#bbf7d0] rounded-xl shadow-sm">
+                    <span class="text-[10px] font-bold text-[#166534] uppercase block tracking-wider">📌 ${globalEvent.title}</span>
+                    <p class="text-[11px] text-[#14532d] mt-0.5 leading-tight">${globalEvent.description}</p>
+                </div>`;
+            }
+            if (holidayName) {
+                eventHtml += `
+                <div class="mb-1 p-1.5 bg-[#fee2e2] border border-[#fecaca] rounded-xl shadow-sm">
+                    <span class="text-[10px] font-bold text-[#991b1b] uppercase block tracking-wider">🔴 Libur Nasional</span>
+                    <p class="text-[11px] text-[#7f1d1d] mt-0.5 leading-tight">${holidayName}</p>
                 </div>`;
             }
 
             calendarCells += `
-            <div class="bg-white p-3 rounded-2xl border ${isToday ? 'border-[#2f6636] ring-2 ring-[#a3e635]/30 shadow-md' : 'border-[#cbd5e1]'} shadow-sm flex flex-col justify-between min-h-[160px]">
+            <div class="${cellBgClass} p-3.5 rounded-2xl border shadow-sm flex flex-col justify-between min-h-[170px] transition">
                 <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="font-bold text-sm ${isToday ? 'bg-[#2f6636] text-white w-7 h-7 rounded-full flex items-center justify-center' : 'text-[#1e293b]'}">${d}</span>
-                        <span class="text-[10px] font-bold text-[#2f6636]">${dateKey}</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-sm ${isToday ? 'bg-[#2f6636] text-white w-7 h-7 rounded-full flex items-center justify-center' : (isSunday || holidayName ? 'text-red-600 font-extrabold' : 'text-[#1e293b]')}">${d}</span>
                     </div>
                     ${eventHtml}
                 </div>
                 <div class="mt-2">
-                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs p-2 border border-[#cbd5e1] rounded-xl resize-none focus:ring-2 focus:ring-[#2f6636] outline-none bg-[#f8fafc] focus:bg-white transition" placeholder="Catatan pribadi...">${existingNote}</textarea>
+                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs p-2 border border-[#cbd5e1] rounded-xl resize-none focus:ring-2 focus:ring-[#2f6636] outline-none bg-white/80 focus:bg-white transition" placeholder="Catatan pribadi...">${existingNote}</textarea>
                 </div>
             </div>`;
         }
@@ -261,7 +312,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#cbd5e1]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#1e293b]">Kalendar Akademik Tahun Ajaran 2026/2027</h2>
-                <p class="text-xs sm:text-sm text-[#4b5563]">Agenda kelas dan catatan jadwal pribadi siswa.</p>
+                <p class="text-xs sm:text-sm text-[#4b5563]">Agenda kelas, libur nasional, dan catatan jadwal pribadi siswa.</p>
             </div>
             <form method="GET" class="flex flex-wrap items-center gap-2 sm:space-x-3 w-full md:w-auto">
                 <select name="month" onchange="this.form.submit()" class="border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636] cursor-pointer">${monthOptions}</select>
@@ -273,8 +324,9 @@ app.get('/calendar', checkAuth, async (req, res) => {
             <input type="hidden" name="year" value="${year}">
             <input type="hidden" name="month" value="${month}">
             
+            <!-- Kotak Kalender Diperlebar dan Bisa Scroll ke Kanan -->
             <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] p-4 sm:p-6 overflow-x-auto">
-                <div class="min-w-[700px]">
+                <div class="min-w-[1000px]">
                     <div class="grid grid-cols-7 gap-3 mb-3 text-center font-black text-xs text-[#2f6636] uppercase tracking-wider">
                         <div class="text-red-600 font-bold">Sun</div>
                         <div class="font-bold">Mon</div>
@@ -369,7 +421,7 @@ app.get('/kas', checkAuth, async (req, res) => {
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
                 <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">Iuran Kaos</td>
                 <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${kaosAmount.toLocaleString()}</td>
-                <td class="py-4 px-4 sm:px-6 whitespace-nowrap"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${kaosBadge}">${isKaosPaid ? 'Paid' : 'Unpaid'}</span></td>
+                <td class="py-4 px-3 sm:px-4 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
         }
 
@@ -397,7 +449,7 @@ app.get('/kas', checkAuth, async (req, res) => {
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
                 <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">${displayLabel}</td>
                 <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${rowAmount.toLocaleString()}</td>
-                <td class="py-4 px-4 sm:px-6 whitespace-nowrap"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${badge}">${paid ? 'Paid' : 'Unpaid'}</span></td>
+                <td class="py-4 px-3 sm:px-4 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
         });
 
@@ -420,9 +472,9 @@ app.get('/kas', checkAuth, async (req, res) => {
                 <table class="w-full text-left text-sm min-w-[500px]">
                     <thead>
                         <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
-                            <th class="py-3 px-4 sm:px-6 w-1/3">Bulan / Keterangan</th>
-                            <th class="py-3 px-4 sm:px-6 w-1/3">Nominal</th>
-                            <th class="py-3 px-4 sm:px-6 w-1/3">Status</th>
+                            <th class="py-3 px-4 sm:px-6 w-[40%]">Bulan / Keterangan</th>
+                            <th class="py-3 px-4 sm:px-6 w-[35%]">Nominal</th>
+                            <th class="py-3 px-3 sm:px-4 w-[25%] text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -438,6 +490,9 @@ app.get('/finances', checkAuth, async (req, res) => {
     try {
         const db = await fetchDb();
         const filter = req.query.filter || 'all';
+        const startDate = req.query.start_date || '';
+        const endDate = req.query.end_date || '';
+        const search = (req.query.search || '').toLowerCase();
         const page = parseInt(req.query.page) || 1;
         const limit = 10;
         
@@ -449,13 +504,26 @@ app.get('/finances', checkAuth, async (req, res) => {
 
         let txs = db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         const now = new Date();
-        txs = txs.filter(t => {
-            const tDate = new Date(t.date);
-            if (filter === 'daily') return tDate.toDateString() === now.toDateString();
-            if (filter === 'weekly') { const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7); return tDate >= weekAgo; }
-            if (filter === 'monthly') return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
-            return true;
-        });
+
+        // Filter berdasarkan pencarian nama / keterangan
+        if (search) {
+            txs = txs.filter(t => String(t.desc).toLowerCase().includes(search));
+        }
+
+        // Filter berdasarkan rentang tanggal atau filter cepat
+        if (startDate && endDate) {
+            txs = txs.filter(t => {
+                return t.date >= startDate && t.date <= endDate;
+            });
+        } else {
+            txs = txs.filter(t => {
+                const tDate = new Date(t.date);
+                if (filter === 'daily') return tDate.toDateString() === now.toDateString();
+                if (filter === 'weekly') { const weekAgo = new Date(); weekAgo.setDate(now.getDate() - 7); return tDate >= weekAgo; }
+                if (filter === 'monthly') return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+                return true;
+            });
+        }
 
         const totalPages = Math.ceil(txs.length / limit) || 1;
         const paginatedTxs = txs.slice((page - 1) * limit, page * limit);
@@ -463,13 +531,13 @@ app.get('/finances', checkAuth, async (req, res) => {
         
         paginatedTxs.forEach(tx => {
             const amt = Number(tx.amount);
-            const badge = tx.type === 'income' ? '<span class="text-[#166534] bg-[#dcfce7] border border-[#bbf7d0] px-2 py-0.5 rounded-full text-[11px] font-bold">Pemasukan</span>' : '<span class="text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] px-2 py-0.5 rounded-full text-[11px] font-bold">Pengeluaran</span>';
+            const badge = tx.type === 'income' ? '<span class="text-[#166534] bg-[#dcfce7] border border-[#bbf7d0] px-2.5 py-0.5 rounded-full text-[11px] font-bold">Pemasukan</span>' : '<span class="text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] px-2.5 py-0.5 rounded-full text-[11px] font-bold">Pengeluaran</span>';
             rows += `
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition align-top">
-                <td class="py-3 px-3 sm:px-6 text-xs text-[#4b5563] whitespace-nowrap w-[90px] sm:w-[110px]">${tx.date}</td>
-                <td class="py-3 px-3 sm:px-6 font-medium text-[#1e293b] text-xs sm:text-sm break-words max-w-[150px] sm:max-w-xs">${tx.desc}</td>
-                <td class="py-3 px-3 sm:px-6 whitespace-nowrap w-[90px]">${badge}</td>
-                <td class="py-3 px-3 sm:px-6 font-bold text-[#1e293b] text-xs sm:text-sm whitespace-nowrap w-[130px] sm:w-[160px] text-right">Rp ${amt.toLocaleString()}</td>
+                <td class="py-3 px-3 sm:px-6 text-xs text-[#4b5563] text-center whitespace-nowrap w-[100px]">${tx.date}</td>
+                <td class="py-3 px-3 sm:px-6 font-medium text-[#1e293b] text-xs sm:text-sm text-left break-words max-w-[180px] sm:max-w-md">${tx.desc}</td>
+                <td class="py-3 px-3 sm:px-6 text-center whitespace-nowrap w-[100px]">${badge}</td>
+                <td class="py-3 px-3 sm:px-6 font-bold text-[#1e293b] text-xs sm:text-sm text-left whitespace-nowrap w-[160px] sm:w-[200px]">Rp ${amt.toLocaleString()}</td>
             </tr>`;
         });
         
@@ -481,34 +549,55 @@ app.get('/finances', checkAuth, async (req, res) => {
             <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#cbd5e1]"><span class="text-xs font-bold uppercase tracking-wider text-[#4b5563]">Total Pengeluaran</span><h3 class="text-xl sm:text-2xl font-black text-[#991b1b] mt-1">Rp ${totalExpense.toLocaleString()}</h3></div>
             <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#cbd5e1]"><span class="text-xs font-bold uppercase tracking-wider text-[#4b5563]">Total Saldo</span><h3 class="text-xl sm:text-2xl font-black text-[#2f6636] mt-1">Rp ${balance.toLocaleString()}</h3></div>
         </div>
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-[#cbd5e1] mb-6 flex flex-wrap items-center justify-between gap-4">
-            <form method="GET" class="flex items-center gap-2 w-full sm:w-auto">
-                <label class="text-sm font-semibold text-[#4b5563]">Filter Waktu:</label>
-                <select name="filter" onchange="this.form.submit()" class="border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
-                    <option value="all" ${filter === 'all' ? 'selected' : ''}>Semua Waktu</option>
-                    <option value="daily" ${filter === 'daily' ? 'selected' : ''}>Hari Ini</option>
-                    <option value="weekly" ${filter === 'weekly' ? 'selected' : ''}>Minggu Ini</option>
-                    <option value="monthly" ${filter === 'monthly' ? 'selected' : ''}>Bulan Ini</option>
-                </select>
+
+        <!-- Filter & Search Panel -->
+        <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-[#cbd5e1] mb-6">
+            <form method="GET" class="flex flex-wrap items-end gap-4">
+                <div class="flex-grow min-w-[200px]">
+                    <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Cari Nama / Keterangan</label>
+                    <input type="text" name="search" value="${search}" placeholder="Contoh: Aksa, Kas, dll..." class="w-full border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Dari Tanggal</label>
+                    <input type="date" name="start_date" value="${startDate}" class="border border-[#cbd5e1] px-3 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Sampai Tanggal</label>
+                    <input type="date" name="end_date" value="${endDate}" class="border border-[#cbd5e1] px-3 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Filter Cepat</label>
+                    <select name="filter" class="border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
+                        <option value="all" ${filter === 'all' && !startDate ? 'selected' : ''}>Semua Waktu</option>
+                        <option value="daily" ${filter === 'daily' ? 'selected' : ''}>Hari Ini</option>
+                        <option value="weekly" ${filter === 'weekly' ? 'selected' : ''}>Minggu Ini</option>
+                        <option value="monthly" ${filter === 'monthly' ? 'selected' : ''}>Bulan Ini</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="bg-[#2f6636] hover:bg-[#244f2b] text-white px-5 py-2 rounded-xl text-sm font-bold shadow-sm transition">Filter</button>
+                    <a href="/finances" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl text-sm font-bold transition flex items-center justify-center">Reset</a>
+                </div>
             </form>
         </div>
+
         <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-x-auto mb-6">
-            <table class="w-full text-left min-w-[550px]">
+            <table class="w-full min-w-[600px]">
                 <thead>
                     <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
-                        <th class="py-3 px-3 sm:px-6 w-[90px] sm:w-[110px]">Tanggal</th>
-                        <th class="py-3 px-3 sm:px-6">Keterangan</th>
-                        <th class="py-3 px-3 sm:px-6 w-[90px]">Tipe</th>
-                        <th class="py-3 px-3 sm:px-6 w-[130px] sm:w-[160px] text-right">Jumlah</th>
+                        <th class="py-3 px-3 sm:px-6 text-center w-[100px]">Tanggal</th>
+                        <th class="py-3 px-3 sm:px-6 text-left">Keterangan</th>
+                        <th class="py-3 px-3 sm:px-6 text-center w-[100px]">Tipe</th>
+                        <th class="py-3 px-3 sm:px-6 text-left w-[160px] sm:w-[200px]">Jumlah</th>
                     </tr>
                 </thead>
-                <tbody>${rows}</tbody>
+                <tbody>${rows || `<tr><td colspan="4" class="text-center py-8 text-gray-500 text-sm">Tidak ada data keuangan yang ditemukan.</td></tr>`}</tbody>
             </table>
         </div>
         <div class="flex justify-center items-center gap-2 mb-6">
-            ${page > 1 ? `<a href="?page=${page-1}&filter=${filter}" class="px-4 py-2 bg-white border border-[#cbd5e1] rounded-xl text-sm font-bold text-[#2f6636] hover:bg-[#f8fafc]">Prev</a>` : ''}
+            ${page > 1 ? `<a href="?page=${page-1}&filter=${filter}&search=${search}&start_date=${startDate}&end_date=${endDate}" class="px-4 py-2 bg-white border border-[#cbd5e1] rounded-xl text-sm font-bold text-[#2f6636] hover:bg-[#f8fafc]">Prev</a>` : ''}
             <span class="px-4 py-2 text-sm font-bold text-[#4b5563]">Halaman ${page} dari ${totalPages}</span>
-            ${page < totalPages ? `<a href="?page=${page+1}&filter=${filter}" class="px-4 py-2 bg-white border border-[#cbd5e1] rounded-xl text-sm font-bold text-[#2f6636] hover:bg-[#f8fafc]">Next</a>` : ''}
+            ${page < totalPages ? `<a href="?page=${page+1}&filter=${filter}&search=${search}&start_date=${startDate}&end_date=${endDate}" class="px-4 py-2 bg-white border border-[#cbd5e1] rounded-xl text-sm font-bold text-[#2f6636] hover:bg-[#f8fafc]">Next</a>` : ''}
         </div>
         <div class="mt-6"><a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold">&larr; Kembali ke Beranda</a></div>`;
         res.send(layout('Laporan Keuangan', content));
