@@ -44,7 +44,7 @@ function checkAuth(req, res, next) {
     }
 }
 
-// Daftar Hari Libur Nasional Indonesia (Referensi 2026 & 2027)
+// Daftar Hari Libur Nasional Indonesia (Referensi 2026 & 2027) - Maulid 25 Agustus 2026
 const nationalHolidays = {
     "2026-01-01": "Tahun Baru Masehi",
     "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
@@ -61,7 +61,7 @@ const nationalHolidays = {
     "2026-06-01": "Hari Lahir Pancasila",
     "2026-06-16": "Tahun Baru Islam",
     "2026-08-17": "Hari Kemerdekaan RI",
-    "2026-08-24": "Maulid Nabi Muhammad SAW",
+    "2026-08-25": "Maulid Nabi Muhammad SAW",
     "2026-12-25": "Hari Raya Natal",
     "2027-01-01": "Tahun Baru Masehi",
     "2027-01-05": "Isra Mikraj Nabi Muhammad SAW",
@@ -96,7 +96,7 @@ const layout = (title, content) => `
     </style>
 </head>
 <body class="bg-[#f0f4f1] text-[#1e293b] min-h-screen flex flex-col font-sans">
-    <div id="loading-overlay" class="fixed inset-0 bg-[#f0f4f1] flex flex-col items-center justify-center z-[9999]">
+    <div id="loading-overlay" class="fixed inset-0 bg-[#f0f4f1] flex flex-col items-center justify-center z-[9999]" style="display: none;">
         <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#2f6636]"></div>
         <p class="mt-4 text-[#2f6636] font-bold text-lg animate-pulse">Mohon tunggu sebentar...</p>
     </div>
@@ -115,8 +115,30 @@ const layout = (title, content) => `
     <script>
         window.addEventListener('load', function() {
             const overlay = document.getElementById('loading-overlay');
-            overlay.style.opacity = '0';
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            if (overlay) {
+                overlay.style.opacity = '0';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            }
+        });
+
+        // Munculkan loading saat klik link navigasi atau submit form
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.href && link.href.startsWith(window.location.origin) && !link.getAttribute('target')) {
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                    overlay.style.display = 'flex';
+                    overlay.style.opacity = '1';
+                }
+            }
+        });
+
+        document.addEventListener('submit', function(e) {
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+                overlay.style.opacity = '1';
+            }
         });
     </script>
 </body>
@@ -265,7 +287,6 @@ app.get('/calendar', checkAuth, async (req, res) => {
             const isSunday = (dayOfWeek === 0);
             const isToday = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}` === dateKey;
 
-            // Jika ada agenda (catatan pribadi atau event sekolah), block satu kotak dengan warna hijau muda soft
             const hasAgenda = (existingNote.trim() !== '' || globalEvent);
             const cellBgClass = hasAgenda ? 'bg-[#e8f5e9] border-[#a3e635]' : (isToday ? 'bg-white border-[#2f6636] ring-2 ring-[#a3e635]/30 shadow-md' : 'bg-white border-[#cbd5e1]');
 
@@ -324,7 +345,6 @@ app.get('/calendar', checkAuth, async (req, res) => {
             <input type="hidden" name="year" value="${year}">
             <input type="hidden" name="month" value="${month}">
             
-            <!-- Kotak Kalender Diperlebar dan Bisa Scroll ke Kanan -->
             <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] p-4 sm:p-6 overflow-x-auto">
                 <div class="min-w-[1000px]">
                     <div class="grid grid-cols-7 gap-3 mb-3 text-center font-black text-xs text-[#2f6636] uppercase tracking-wider">
@@ -348,7 +368,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
         </form>
 
         <div class="mt-6">
-            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold transition">&larr; Kembali ke Beranda</a>
+            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold">&larr; Kembali ke Beranda</a>
         </div>`;
 
         res.send(layout('Kalendar Akademik', content));
@@ -419,9 +439,9 @@ app.get('/kas', checkAuth, async (req, res) => {
             
             rows += `
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
-                <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">Iuran Kaos</td>
-                <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${kaosAmount.toLocaleString()}</td>
-                <td class="py-4 px-3 sm:px-4 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
+                <td class="py-4 px-4 font-semibold text-[#1e293b] whitespace-nowrap">Iuran Kaos</td>
+                <td class="py-4 px-3 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${kaosAmount.toLocaleString()}</td>
+                <td class="py-4 px-3 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
         }
 
@@ -447,9 +467,9 @@ app.get('/kas', checkAuth, async (req, res) => {
 
             rows += `
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
-                <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">${displayLabel}</td>
-                <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${rowAmount.toLocaleString()}</td>
-                <td class="py-4 px-3 sm:px-4 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td>
+                <td class="py-4 px-4 font-semibold text-[#1e293b] whitespace-nowrap">${displayLabel}</td>
+                <td class="py-4 px-3 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${rowAmount.toLocaleString()}</td>
+                <td class="py-4 px-3 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
         });
 
@@ -467,14 +487,14 @@ app.get('/kas', checkAuth, async (req, res) => {
                 </select>
             </form>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden max-w-3xl">
+        <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden max-w-lg">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm min-w-[500px]">
+                <table class="w-full text-left text-sm">
                     <thead>
                         <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
-                            <th class="py-3 px-4 sm:px-6 w-[40%]">Bulan / Keterangan</th>
-                            <th class="py-3 px-4 sm:px-6 w-[35%]">Nominal</th>
-                            <th class="py-3 px-3 sm:px-4 w-[25%] text-center">Status</th>
+                            <th class="py-3 px-4 w-[45%]">Bulan / Keterangan</th>
+                            <th class="py-3 px-3 w-[30%]">Nominal</th>
+                            <th class="py-3 px-3 w-[25%] text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -505,12 +525,10 @@ app.get('/finances', checkAuth, async (req, res) => {
         let txs = db.transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
         const now = new Date();
 
-        // Filter berdasarkan pencarian nama / keterangan
         if (search) {
             txs = txs.filter(t => String(t.desc).toLowerCase().includes(search));
         }
 
-        // Filter berdasarkan rentang tanggal atau filter cepat
         if (startDate && endDate) {
             txs = txs.filter(t => {
                 return t.date >= startDate && t.date <= endDate;
@@ -550,12 +568,11 @@ app.get('/finances', checkAuth, async (req, res) => {
             <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#cbd5e1]"><span class="text-xs font-bold uppercase tracking-wider text-[#4b5563]">Total Saldo</span><h3 class="text-xl sm:text-2xl font-black text-[#2f6636] mt-1">Rp ${balance.toLocaleString()}</h3></div>
         </div>
 
-        <!-- Filter & Search Panel -->
         <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-[#cbd5e1] mb-6">
             <form method="GET" class="flex flex-wrap items-end gap-4">
                 <div class="flex-grow min-w-[200px]">
                     <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Cari Nama / Keterangan</label>
-                    <input type="text" name="search" value="${search}" placeholder="Contoh: Aksa, Kas, dll..." class="w-full border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
+                    <input type="text" name="search" value="${search}" placeholder="Contoh: Nama, Kaos, Juli, dll..." class="w-full border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636]">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-[#4b5563] uppercase mb-1">Dari Tanggal</label>
