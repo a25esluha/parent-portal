@@ -367,14 +367,22 @@ app.get('/kas', checkAuth, async (req, res) => {
             
             rows += `
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
-                <td class="py-4 px-6 font-semibold text-[#1e293b]">Iuran Kaos</td>
-                <td class="py-4 px-6 text-sm text-[#4b5563]">Rp ${kaosAmount.toLocaleString()}</td>
-                <td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
+                <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">Iuran Kaos</td>
+                <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${kaosAmount.toLocaleString()}</td>
+                <td class="py-4 px-4 sm:px-6 whitespace-nowrap"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${kaosBadge}">${isKaosPaid ? 'Paid' : 'Unpaid'}</span></td>
             </tr>`;
         }
 
         targetMonths.forEach((m, index) => {
-            const found = userKas.find(k => String(k.month || '').trim().toLowerCase() === m.toLowerCase());
+            const found = userKas.find(k => {
+                const dbMonth = String(k.month || '').trim().toLowerCase();
+                const targetM = m.toLowerCase();
+                if (dbMonth === targetM) return true;
+                const baseTarget = targetM.split(' ')[0];
+                if (dbMonth === baseTarget) return true;
+                return false;
+            });
+
             const paid = isPaid(found?.status);
             const badge = paid ? 'bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]' : 'bg-[#fee2e2] text-[#991b1b] border border-[#fecaca]';
             const rowAmount = getRowAmount(found, false);
@@ -387,9 +395,9 @@ app.get('/kas', checkAuth, async (req, res) => {
 
             rows += `
             <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
-                <td class="py-4 px-6 font-semibold text-[#1e293b]">${displayLabel}</td>
-                <td class="py-4 px-6 text-sm text-[#4b5563]">Rp ${rowAmount.toLocaleString()}</td>
-                <td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td>
+                <td class="py-4 px-4 sm:px-6 font-semibold text-[#1e293b] whitespace-nowrap">${displayLabel}</td>
+                <td class="py-4 px-4 sm:px-6 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${rowAmount.toLocaleString()}</td>
+                <td class="py-4 px-4 sm:px-6 whitespace-nowrap"><span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${badge}">${paid ? 'Paid' : 'Unpaid'}</span></td>
             </tr>`;
         });
 
@@ -407,14 +415,14 @@ app.get('/kas', checkAuth, async (req, res) => {
                 </select>
             </form>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden max-w-2xl">
+        <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden max-w-3xl">
             <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm min-w-[400px]">
+                <table class="w-full text-left text-sm min-w-[500px]">
                     <thead>
                         <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
-                            <th class="py-3 px-6">Bulan / Keterangan</th>
-                            <th class="py-3 px-6">Nominal</th>
-                            <th class="py-3 px-6">Status</th>
+                            <th class="py-3 px-4 sm:px-6 w-1/3">Bulan / Keterangan</th>
+                            <th class="py-3 px-4 sm:px-6 w-1/3">Nominal</th>
+                            <th class="py-3 px-4 sm:px-6 w-1/3">Status</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -455,8 +463,14 @@ app.get('/finances', checkAuth, async (req, res) => {
         
         paginatedTxs.forEach(tx => {
             const amt = Number(tx.amount);
-            const badge = tx.type === 'income' ? '<span class="text-[#166534] bg-[#dcfce7] border border-[#bbf7d0] px-2.5 py-1 rounded-full text-xs font-bold">Pemasukan</span>' : '<span class="text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] px-2.5 py-1 rounded-full text-xs font-bold">Pengeluaran</span>';
-            rows += `<tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition"><td class="py-4 px-6 text-xs sm:text-sm text-[#4b5563]">${tx.date}</td><td class="py-4 px-6 font-medium text-[#1e293b] text-xs sm:text-sm">${tx.desc}</td><td class="py-4 px-6">${badge}</td><td class="py-4 px-6 font-bold text-[#1e293b] text-xs sm:text-sm">Rp ${amt.toLocaleString()}</td></tr>`;
+            const badge = tx.type === 'income' ? '<span class="text-[#166534] bg-[#dcfce7] border border-[#bbf7d0] px-2 py-0.5 rounded-full text-[11px] font-bold">Pemasukan</span>' : '<span class="text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] px-2 py-0.5 rounded-full text-[11px] font-bold">Pengeluaran</span>';
+            rows += `
+            <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition align-top">
+                <td class="py-3 px-3 sm:px-6 text-xs text-[#4b5563] whitespace-nowrap w-[90px] sm:w-[110px]">${tx.date}</td>
+                <td class="py-3 px-3 sm:px-6 font-medium text-[#1e293b] text-xs sm:text-sm break-words max-w-[150px] sm:max-w-xs">${tx.desc}</td>
+                <td class="py-3 px-3 sm:px-6 whitespace-nowrap w-[90px]">${badge}</td>
+                <td class="py-3 px-3 sm:px-6 font-bold text-[#1e293b] text-xs sm:text-sm whitespace-nowrap w-[130px] sm:w-[160px] text-right">Rp ${amt.toLocaleString()}</td>
+            </tr>`;
         });
         
         const balance = totalIncome - totalExpense;
@@ -479,8 +493,15 @@ app.get('/finances', checkAuth, async (req, res) => {
             </form>
         </div>
         <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-x-auto mb-6">
-            <table class="w-full text-left min-w-[600px]">
-                <thead><tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]"><th class="py-3 px-6">Tanggal</th><th class="py-3 px-6">Keterangan</th><th class="py-3 px-6">Tipe</th><th class="py-3 px-6">Jumlah</th></tr></thead>
+            <table class="w-full text-left min-w-[550px]">
+                <thead>
+                    <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
+                        <th class="py-3 px-3 sm:px-6 w-[90px] sm:w-[110px]">Tanggal</th>
+                        <th class="py-3 px-3 sm:px-6">Keterangan</th>
+                        <th class="py-3 px-3 sm:px-6 w-[90px]">Tipe</th>
+                        <th class="py-3 px-3 sm:px-6 w-[130px] sm:w-[160px] text-right">Jumlah</th>
+                    </tr>
+                </thead>
                 <tbody>${rows}</tbody>
             </table>
         </div>
