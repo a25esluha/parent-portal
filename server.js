@@ -11,9 +11,30 @@ app.get('/', (req, res) => {
 
 const SCRIPT_URL = process.env.APPS_SCRIPT_URL || "YOUR_APPS_SCRIPT_URL_HERE";
 
+// --- SISTEM CACHE MEMORI (SUPAYA SUPER CEPAT) ---
+let cacheData = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // Simpan data di RAM selama 5 menit
+
 async function fetchDb() {
-    const res = await fetch(`${SCRIPT_URL}?action=getData`);
-    return await res.json();
+    const now = Date.now();
+    // Jika cache masih baru (kurang dari 5 menit), kirimkan data instant dari RAM
+    if (cacheData && (now - lastFetchTime < CACHE_DURATION)) {
+        return cacheData;
+    }
+    
+    // Jika sudah lebih dari 5 menit, baru minta data segar ke Google Sheets
+    try {
+        const res = await fetch(`${SCRIPT_URL}?action=getData`);
+        const data = await res.json();
+        cacheData = data;
+        lastFetchTime = now;
+        return cacheData;
+    } catch (e) {
+        console.error("Gagal mengambil data baru dari Apps Script:", e);
+        // Jika koneksi ke Google error, gunakan cache lama agar web tidak runtuh
+        return cacheData || { users: [], notes: [], kas: [], transactions: [], announcements: [], events: [] };
+    }
 }
 
 const sessions = {};
@@ -51,7 +72,7 @@ const layout = (title, content) => `
     </style>
 </head>
 <body class="bg-[#f5f7f4] text-[#363d34] min-h-screen flex flex-col font-sans">
-    <!-- Loading Popup -->
+    <!-- Pop up Loading -->
     <div id="loading-overlay" class="fixed inset-0 bg-[#f5f7f4] flex flex-col items-center justify-center z-[9999]">
         <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#586b55]"></div>
         <p class="mt-4 text-[#586b55] font-bold text-lg animate-pulse">Mohon tunggu sebentar...</p>
@@ -79,9 +100,6 @@ const layout = (title, content) => `
 </html>
 `;
 
-// ... (Bagian Login, Dashboard, Kalendar, Kas, Finansial, Pengumuman tetap sama seperti sebelumnya)
-
-// Rute Login
 app.get('/login', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -296,6 +314,8 @@ app.post('/calendar/save', checkAuth, async (req, res) => {
             }),
             headers: { 'Content-Type': 'application/json' }
         });
+        // Kosongkan cache lokal agar langsung terbarui setelah disimpan
+        cacheData = null;
         res.redirect(`/calendar?year=${year}&month=${month}`);
     } catch (e) { res.status(500).send("Error saving notes"); }
 });
