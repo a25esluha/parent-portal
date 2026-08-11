@@ -44,7 +44,6 @@ function checkAuth(req, res, next) {
     }
 }
 
-// Layout dengan palet warna baru yang lebih tajam, kontras, dan sedep dipandang
 const layout = (title, content) => `
 <!DOCTYPE html>
 <html lang="id">
@@ -333,7 +332,7 @@ app.get('/kas', checkAuth, async (req, res) => {
 
         let targetMonths = [];
         if (period === 'sem2') {
-            targetMonths = sem2Months;
+            targetMonths = sem2Months; // Semester 2 tidak menampilkan kaos
         } else if (period === 'all') {
             targetMonths = [...sem1Months, ...sem2Months];
         } else {
@@ -355,21 +354,23 @@ app.get('/kas', checkAuth, async (req, res) => {
             return amt;
         };
 
-        // 1. Iuran Kaos
-        const kaosFound = userKas.find(k => {
-            const mName = String(k.month || '').trim().toLowerCase();
-            return mName === 'iuran kaos' || mName === 'kaos';
-        });
-        const isKaosPaid = isPaid(kaosFound?.status);
-        const kaosAmount = getRowAmount(kaosFound, true);
-        const kaosBadge = isKaosPaid ? 'bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]' : 'bg-[#fee2e2] text-[#991b1b] border border-[#fecaca]';
-        
-        rows += `
-        <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
-            <td class="py-4 px-6 font-semibold text-[#1e293b]">Iuran Kaos</td>
-            <td class="py-4 px-6 text-sm text-[#4b5563]">Rp ${kaosAmount.toLocaleString()}</td>
-            <td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
-        </tr>`;
+        // 1. Iuran Kaos HANYA muncul jika bukan di Semester 2 murni
+        if (period !== 'sem2') {
+            const kaosFound = userKas.find(k => {
+                const mName = String(k.month || '').trim().toLowerCase();
+                return mName === 'iuran kaos' || mName === 'kaos';
+            });
+            const isKaosPaid = isPaid(kaosFound?.status);
+            const kaosAmount = getRowAmount(kaosFound, true);
+            const kaosBadge = isKaosPaid ? 'bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]' : 'bg-[#fee2e2] text-[#991b1b] border border-[#fecaca]';
+            
+            rows += `
+            <tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition">
+                <td class="py-4 px-6 font-semibold text-[#1e293b]">Iuran Kaos</td>
+                <td class="py-4 px-6 text-sm text-[#4b5563]">Rp ${kaosAmount.toLocaleString()}</td>
+                <td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
+            </tr>`;
+        }
 
         // 2. Render Kas Bulanan
         targetMonths.forEach((m, index) => {
@@ -435,7 +436,19 @@ app.get('/finances', checkAuth, async (req, res) => {
             
             let descText = tx.desc;
             if (descText.startsWith("Uang Kas -")) {
-                descText = "Pemasukan Uang Kas Kelas";
+                // Ubah tulisan laporan keuangan khusus kas/kaos
+                if (descText.toLowerCase().includes("kaos")) {
+                    // Ambil nama siswa dari string, misal: "Uang Kas - DHIYA (Kaos)" -> "Pembayaran Kaos - DHIYA"
+                    const parts = descText.split("-");
+                    if(parts.length > 1) {
+                        const studentPart = parts[1].split("(")[0].trim();
+                        descText = `Pembayaran Kaos - ${studentPart}`;
+                    } else {
+                        descText = "Pembayaran Kaos";
+                    }
+                } else {
+                    descText = "Pemasukan Uang Kas Kelas";
+                }
             }
 
             rows += `<tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition"><td class="py-4 px-6 text-xs sm:text-sm text-[#4b5563]">${tx.date}</td><td class="py-4 px-6 font-medium text-[#1e293b] text-xs sm:text-sm">${descText}</td><td class="py-4 px-6">${badge}</td><td class="py-4 px-6 font-bold text-[#1e293b] text-xs sm:text-sm">Rp ${amt.toLocaleString()}</td></tr>`;
