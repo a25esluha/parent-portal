@@ -5,7 +5,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Rute otomatis ke login
 app.get('/', (req, res) => {
     res.redirect('/login');
 });
@@ -29,6 +28,16 @@ function checkAuth(req, res, next) {
     }
 }
 
+function translateMonth(m) {
+    const map = {
+        "January": "Januari", "February": "Februari", "March": "Maret", "April": "April",
+        "May": "Mei", "June": "Juni", "July": "Juli", "August": "Agustus",
+        "September": "September", "October": "Oktober", "November": "November", "December": "Desember"
+    };
+    const parts = m.split(" ");
+    return (map[parts[0]] || parts[0]) + " " + parts[1];
+}
+
 const layout = (title, content) => `
 <!DOCTYPE html>
 <html lang="id">
@@ -37,8 +46,17 @@ const layout = (title, content) => `
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #loading-overlay { transition: opacity 0.3s ease; }
+    </style>
 </head>
 <body class="bg-[#f5f7f4] text-[#363d34] min-h-screen flex flex-col font-sans">
+    <!-- Loading Popup -->
+    <div id="loading-overlay" class="fixed inset-0 bg-[#f5f7f4] flex flex-col items-center justify-center z-[9999]">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-[#586b55]"></div>
+        <p class="mt-4 text-[#586b55] font-bold text-lg animate-pulse">Mohon tunggu sebentar...</p>
+    </div>
+
     <nav class="bg-[#586b55] text-white shadow-md">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
             <a href="/dashboard" class="font-bold text-base sm:text-xl flex items-center space-x-2"><span>🌿</span><span>Portal Walimurid Kelas 2A</span></a>
@@ -49,10 +67,21 @@ const layout = (title, content) => `
         ${content}
     </main>
     <footer class="text-center py-6 text-xs text-[#717d6e] border-t border-[#e2e8df] bg-[#ebeeea]">Portal Walimurid Kelas 2A &copy; 2026 Dhiya</footer>
+    
+    <script>
+        window.addEventListener('load', function() {
+            const overlay = document.getElementById('loading-overlay');
+            overlay.style.opacity = '0';
+            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+        });
+    </script>
 </body>
 </html>
 `;
 
+// ... (Bagian Login, Dashboard, Kalendar, Kas, Finansial, Pengumuman tetap sama seperti sebelumnya)
+
+// Rute Login
 app.get('/login', (req, res) => {
     res.send(`
     <!DOCTYPE html>
@@ -296,28 +325,29 @@ app.get('/kas', checkAuth, async (req, res) => {
 
         let rows = '';
 
-        // 1. Iuran Kaos (Dibuat Paling Atas)
         const kaosFound = userKas.find(k => {
             const mName = String(k.month).trim().toLowerCase();
             return mName === 'iuran kaos' || mName === 'kaos';
         });
-        const kaosStatus = (kaosFound && String(kaosFound.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
-        const kaosBadge = kaosStatus === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
-        rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">Iuran Kaos</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${kaosStatus}</span></td></tr>`;
+        const isKaosPaid = (kaosFound && String(kaosFound.status).trim().toLowerCase() === 'paid');
+        const kaosStatusText = isKaosPaid ? 'Lunas' : 'Belum Bayar';
+        const kaosBadge = isKaosPaid ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
+        
+        rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">Iuran Kaos</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${kaosBadge}">${kaosStatusText}</span></td></tr>`;
 
-        // 2. Render Kas Bulanan Berdasarkan Filter
         targetMonths.forEach(m => {
             const found = userKas.find(k => String(k.month).trim().toLowerCase() === m.toLowerCase());
-            const status = (found && String(found.status).trim().toLowerCase() === 'paid') ? 'Paid' : 'Unpaid';
-            const badge = status === 'Paid' ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
-            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${m}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${status}</span></td></tr>`;
+            const isPaid = (found && String(found.status).trim().toLowerCase() === 'paid');
+            const statusText = isPaid ? 'Lunas' : 'Belum Bayar';
+            const badge = isPaid ? 'bg-[#e8f2ec] text-[#2e6930] border border-[#cbe3d1]' : 'bg-[#fceeee] text-[#b33a3a] border border-[#fad2d2]';
+            rows += `<tr class="border-b border-[#d8ded5] hover:bg-[#f0f2ef] transition"><td class="py-4 px-6 font-semibold text-[#363d34]">${translateMonth(m)}</td><td class="py-4 px-6"><span class="px-3 py-1 rounded-full text-xs font-bold ${badge}">${statusText}</span></td></tr>`;
         });
 
         const content = `
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#d8ded5]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Iuran Kas Siswa</h2>
-                <p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda periode Juli 2026 - Juli 2027.</p>
+                <p class="text-xs sm:text-sm text-[#717d6e]">Track pembayaran iuran kas kelas dan iuran kaos ananda periode 2026-2027.</p>
             </div>
             <form method="GET" class="w-full md:w-auto">
                 <select name="period" onchange="this.form.submit()" class="border border-[#cbd5c8] px-4 py-2 rounded-xl text-sm font-medium bg-[#f5f7f4] outline-none focus:ring-2 focus:ring-[#586b55] cursor-pointer w-full md:w-auto">
@@ -346,7 +376,7 @@ app.get('/finances', checkAuth, async (req, res) => {
         db.transactions.forEach(tx => {
             const amt = Number(tx.amount);
             if (tx.type === 'income') totalIncome += amt; else totalExpense += amt;
-            const badge = tx.type === 'income' ? '<span class="text-[#2e6930] bg-[#e8f2ec] border border-[#cbe3d1] px-2.5 py-1 rounded-full text-xs font-bold">Income</span>' : '<span class="text-[#b33a3a] bg-[#fceeee] border border-[#fad2d2] px-2.5 py-1 rounded-full text-xs font-bold">Expense</span>';
+            const badge = tx.type === 'income' ? '<span class="text-[#2e6930] bg-[#e8f2ec] border border-[#cbe3d1] px-2.5 py-1 rounded-full text-xs font-bold">Pemasukan</span>' : '<span class="text-[#b33a3a] bg-[#fceeee] border border-[#fad2d2] px-2.5 py-1 rounded-full text-xs font-bold">Pengeluaran</span>';
             
             let descText = tx.desc;
             if (descText.startsWith("Uang Kas -")) {
@@ -360,9 +390,9 @@ app.get('/finances', checkAuth, async (req, res) => {
         const content = `
         <div class="mb-6"><h2 class="text-xl sm:text-2xl font-bold text-[#363d34]">Laporan Keuangan</h2><p class="text-xs sm:text-sm text-[#717d6e]">Laporan income & expense kelas 2A 2026/2027.</p></div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8">
-            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Income</span><h3 class="text-xl sm:text-2xl font-black text-[#2e6930] mt-1">Rp ${totalIncome.toLocaleString()}</h3></div>
-            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Expenses</span><h3 class="text-xl sm:text-2xl font-black text-[#b33a3a] mt-1">Rp ${totalExpense.toLocaleString()}</h3></div>
-            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Current Balance</span><h3 class="text-xl sm:text-2xl font-black text-[#586b55] mt-1">Rp ${balance.toLocaleString()}</h3></div>
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Pemasukan</span><h3 class="text-xl sm:text-2xl font-black text-[#2e6930] mt-1">Rp ${totalIncome.toLocaleString()}</h3></div>
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Total Pengeluaran</span><h3 class="text-xl sm:text-2xl font-black text-[#b33a3a] mt-1">Rp ${totalExpense.toLocaleString()}</h3></div>
+            <div class="bg-white p-5 sm:p-6 rounded-2xl shadow-sm border border-[#d8ded5]"><span class="text-xs font-bold uppercase tracking-wider text-[#717d6e]">Saldo Saat Ini</span><h3 class="text-xl sm:text-2xl font-black text-[#586b55] mt-1">Rp ${balance.toLocaleString()}</h3></div>
         </div>
         <div class="bg-white rounded-2xl shadow-sm border border-[#d8ded5] overflow-x-auto">
             <table class="w-full text-left min-w-[600px]">
@@ -388,7 +418,6 @@ app.get('/announcements', checkAuth, async (req, res) => {
             
             if (rawUrl !== '') {
                 let fileId = '';
-                
                 if (rawUrl.includes('/file/d/')) {
                     const parts = rawUrl.split('/file/d/');
                     if (parts[1]) fileId = parts[1].split('/')[0];
