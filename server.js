@@ -44,6 +44,7 @@ function checkAuth(req, res, next) {
     }
 }
 
+// Layout dengan Favicon Globe (🌍)
 const layout = (title, content) => `
 <!DOCTYPE html>
 <html lang="id">
@@ -51,6 +52,7 @@ const layout = (title, content) => `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         #loading-overlay { transition: opacity 0.3s ease; }
@@ -92,6 +94,7 @@ app.get('/login', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login - Portal Walimurid Kelas 2A</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-[#f0f4f1] flex items-center justify-center min-h-screen px-4">
@@ -241,7 +244,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
                     ${eventHtml}
                 </div>
                 <div class="mt-2">
-                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs p-2 border border-[#cbd5e1] rounded-xl resize-none focus:ring-2 focus:ring-[#2f6636] outline-none bg-[#f8fafc] focus:bg-white transition" placeholder="Catatan pribadi...">${existingNote}</textarea>
+                    <textarea name="notes[${dateKey}]" rows="2" class="w-full text-xs p-2 border border-[#cbd5c8] rounded-xl resize-none focus:ring-2 focus:ring-[#2f6636] outline-none bg-[#f8fafc] focus:bg-white transition" placeholder="Catatan pribadi...">${existingNote}</textarea>
                 </div>
             </div>`;
         }
@@ -332,7 +335,7 @@ app.get('/kas', checkAuth, async (req, res) => {
 
         let targetMonths = [];
         if (period === 'sem2') {
-            targetMonths = sem2Months; // Semester 2 tidak menampilkan kaos
+            targetMonths = sem2Months;
         } else if (period === 'all') {
             targetMonths = [...sem1Months, ...sem2Months];
         } else {
@@ -354,7 +357,7 @@ app.get('/kas', checkAuth, async (req, res) => {
             return amt;
         };
 
-        // 1. Iuran Kaos HANYA muncul jika bukan di Semester 2 murni
+        // 1. Iuran Kaos HANYA muncul jika bukan di Semester 2
         if (period !== 'sem2') {
             const kaosFound = userKas.find(k => {
                 const mName = String(k.month || '').trim().toLowerCase();
@@ -434,22 +437,8 @@ app.get('/finances', checkAuth, async (req, res) => {
             if (tx.type === 'income') totalIncome += amt; else totalExpense += amt;
             const badge = tx.type === 'income' ? '<span class="text-[#166534] bg-[#dcfce7] border border-[#bbf7d0] px-2.5 py-1 rounded-full text-xs font-bold">Pemasukan</span>' : '<span class="text-[#991b1b] bg-[#fee2e2] border border-[#fecaca] px-2.5 py-1 rounded-full text-xs font-bold">Pengeluaran</span>';
             
+            // Menggunakan deskripsi langsung yang sudah diset di Google Apps Script (misal: Pembayaran Uang Kas - Aksa / Pembayaran Uang Kaos - Aksa)
             let descText = tx.desc;
-            if (descText.startsWith("Uang Kas -")) {
-                // Ubah tulisan laporan keuangan khusus kas/kaos
-                if (descText.toLowerCase().includes("kaos")) {
-                    // Ambil nama siswa dari string, misal: "Uang Kas - DHIYA (Kaos)" -> "Pembayaran Kaos - DHIYA"
-                    const parts = descText.split("-");
-                    if(parts.length > 1) {
-                        const studentPart = parts[1].split("(")[0].trim();
-                        descText = `Pembayaran Kaos - ${studentPart}`;
-                    } else {
-                        descText = "Pembayaran Kaos";
-                    }
-                } else {
-                    descText = "Pemasukan Uang Kas Kelas";
-                }
-            }
 
             rows += `<tr class="border-b border-[#cbd5e1] hover:bg-[#f8fafc] transition"><td class="py-4 px-6 text-xs sm:text-sm text-[#4b5563]">${tx.date}</td><td class="py-4 px-6 font-medium text-[#1e293b] text-xs sm:text-sm">${descText}</td><td class="py-4 px-6">${badge}</td><td class="py-4 px-6 font-bold text-[#1e293b] text-xs sm:text-sm">Rp ${amt.toLocaleString()}</td></tr>`;
         });
