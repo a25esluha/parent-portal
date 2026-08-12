@@ -44,7 +44,6 @@ function checkAuth(req, res, next) {
     }
 }
 
-// Daftar Hari Libur Nasional Indonesia (Referensi 2026 & 2027) - Maulid 25 Agustus 2026
 const nationalHolidays = {
     "2026-01-01": "Tahun Baru Masehi",
     "2026-01-16": "Isra Mikraj Nabi Muhammad SAW",
@@ -121,7 +120,6 @@ const layout = (title, content) => `
             }
         });
 
-        // Munculkan loading saat klik link navigasi atau submit form
         document.addEventListener('click', function(e) {
             const link = e.target.closest('a');
             if (link && link.href && link.href.startsWith(window.location.origin) && !link.getAttribute('target')) {
@@ -153,7 +151,7 @@ app.get('/login', (req, res) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login - Portal Walimurid Kelas 2A</title>
-        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%23e57373%22><path d=%22M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z%22/></svg>">
         <script src="https://cdn.tailwindcss.com"></script>
     </head>
     <body class="bg-[#f0f4f1] flex items-center justify-center min-h-screen px-4">
@@ -283,7 +281,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
             const existingNote = notesMap[dateKey] || '';
             const globalEvent = eventsMap[dateKey];
             const holidayName = nationalHolidays[dateKey];
-            const dayOfWeek = new Date(year, month - 1, d).getDay(); // 0 = Minggu
+            const dayOfWeek = new Date(year, month - 1, d).getDay();
             const isSunday = (dayOfWeek === 0);
             const isToday = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}` === dateKey;
 
@@ -423,7 +421,7 @@ app.get('/kas', checkAuth, async (req, res) => {
         const getRowAmount = (k, isKaos = false) => {
             let amt = Number(k?.amount);
             if (!amt || isNaN(amt)) {
-                amt = isKaos ? 78000 : 25000;
+                amt = isKaos ? 71000 : 25000;
             }
             return amt;
         };
@@ -477,7 +475,7 @@ app.get('/kas', checkAuth, async (req, res) => {
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#cbd5e1]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#1e293b]">Iuran Kas Siswa</h2>
-                <p class="text-xs sm:text-sm text-[#4b5563] mt-1">💡 Iuran kas kelas adalah <strong>Rp 25.000 / bulan</strong> (Juli 2026 - Juni 2027). Untuk iuran kaos otomatis Rp 78.000 jika tidak ada catatan khusus.</p>
+                <p class="text-xs sm:text-sm text-[#4b5563] mt-1">💡 Iuran kas kelas adalah <strong>Rp 25.000 / bulan</strong> (Juli 2026 - Juni 2027). Untuk iuran kaos otomatis Rp 71.000 jika tidak ada catatan khusus.</p>
             </div>
             <form method="GET" class="w-full md:w-auto">
                 <select name="period" onchange="this.form.submit()" class="border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636] cursor-pointer w-full md:w-auto">
