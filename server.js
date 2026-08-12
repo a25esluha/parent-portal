@@ -421,7 +421,7 @@ app.get('/kas', checkAuth, async (req, res) => {
         const getRowAmount = (k, isKaos = false) => {
             let amt = Number(k?.amount);
             if (!amt || isNaN(amt)) {
-                amt = isKaos ? 71000 : 25000;
+                amt = isKaos ? 68000 : 25000;
             }
             return amt;
         };
@@ -444,8 +444,8 @@ app.get('/kas', checkAuth, async (req, res) => {
             
             checkboxes += `
             <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="71000" onchange="calcTotal()">
-                <span class="text-sm font-medium">Iuran Kaos (Rp 71.000)</span>
+                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="68000" onchange="calcTotal()">
+                <span class="text-sm font-medium">Iuran Kaos (Rp 68.000)</span>
             </label>`;
         }
 
