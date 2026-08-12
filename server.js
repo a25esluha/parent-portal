@@ -366,7 +366,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
         </form>
 
         <div class="mt-6">
-            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold transition">&larr; Kembali ke Beranda</a>
+            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold">&larr; Kembali ke Beranda</a>
         </div>`;
 
         res.send(layout('Kalendar Akademik', content));
@@ -411,7 +411,7 @@ app.get('/kas', checkAuth, async (req, res) => {
             targetMonths = sem1Months;
         }
 
-        let rows = '';
+        let rows = '', checkboxes = '';
 
         const isPaid = (status) => {
             const s = String(status || '').trim().toLowerCase();
@@ -441,6 +441,12 @@ app.get('/kas', checkAuth, async (req, res) => {
                 <td class="py-4 px-3 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${kaosAmount.toLocaleString()}</td>
                 <td class="py-4 px-3 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${kaosBadge}">${isKaosPaid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
+            
+            checkboxes += `
+            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="71000" onchange="calcTotal()">
+                <span class="text-sm font-medium">Iuran Kaos (Rp 71.000)</span>
+            </label>`;
         }
 
         targetMonths.forEach((m, index) => {
@@ -469,6 +475,12 @@ app.get('/kas', checkAuth, async (req, res) => {
                 <td class="py-4 px-3 text-sm text-[#4b5563] whitespace-nowrap font-medium">Rp ${rowAmount.toLocaleString()}</td>
                 <td class="py-4 px-3 text-center whitespace-nowrap"><span class="inline-block px-2.5 py-1 rounded-full text-xs font-bold ${badge}">${paid ? 'Lunas' : 'Belum Bayar'}</span></td>
             </tr>`;
+
+            checkboxes += `
+            <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
+                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="25000" onchange="calcTotal()">
+                <span class="text-sm font-medium">${displayLabel} (Rp 25.000)</span>
+            </label>`;
         });
 
         const content = `
@@ -485,20 +497,48 @@ app.get('/kas', checkAuth, async (req, res) => {
                 </select>
             </form>
         </div>
-        <div class="bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden max-w-lg">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead>
-                        <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
-                            <th class="py-3 px-4 w-[45%]">Bulan / Keterangan</th>
-                            <th class="py-3 px-3 w-[30%]">Nominal</th>
-                            <th class="py-3 px-3 w-[25%] text-center">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-[#cbd5e1] overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-[#f1f5f9] text-[#4b5563] text-xs uppercase tracking-wider border-b border-[#cbd5e1]">
+                                <th class="py-3 px-4 w-[45%]">Bulan / Keterangan</th>
+                                <th class="py-3 px-3 w-[30%]">Nominal</th>
+                                <th class="py-3 px-3 w-[25%] text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-[#cbd5e1] flex flex-col justify-between">
+                <div>
+                    <h3 class="font-bold text-lg text-[#1e293b] mb-3">🧮 Kalkulator Simulasi Total</h3>
+                    <p class="text-xs text-[#4b5563] mb-4">Centang item di bawah untuk menghitung total pembayaran yang ingin disetorkan:</p>
+                    <div class="space-y-2 mb-4 max-h-[350px] overflow-y-auto pr-1">
+                        ${checkboxes}
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-[#cbd5e1]">
+                    <div class="text-xs font-bold text-[#4b5563] uppercase">Total Pembayaran:</div>
+                    <div class="text-2xl font-black text-[#2f6636] mt-1">Rp <span id="totalDisplay">0</span></div>
+                </div>
             </div>
         </div>
+
+        <script>
+            function calcTotal() {
+                let total = 0;
+                document.querySelectorAll('.calc-item:checked').forEach(item => {
+                    total += parseInt(item.dataset.price) || 0;
+                });
+                document.getElementById('totalDisplay').innerText = total.toLocaleString();
+            }
+        </script>
+
         <div class="mt-6"><a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold">&larr; Kembali ke Beranda</a></div>`;
         res.send(layout('Iuran Kas Siswa', content));
     } catch (e) { res.status(500).send("Error"); }
