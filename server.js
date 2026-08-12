@@ -426,13 +426,15 @@ app.get('/kas', checkAuth, async (req, res) => {
             return amt;
         };
 
+        // --- DINAMIS KAOS PRICE (Membaca sesuai tagihan anak, default 68000 jika kosong) ---
+        const kaosFound = userKas.find(k => {
+            const mName = String(k.month || '').trim().toLowerCase();
+            return mName.includes('kaos');
+        });
+        const kaosAmount = getRowAmount(kaosFound, true);
+
         if (period !== 'sem2') {
-            const kaosFound = userKas.find(k => {
-                const mName = String(k.month || '').trim().toLowerCase();
-                return mName.includes('kaos');
-            });
             const isKaosPaid = isPaid(kaosFound?.status);
-            const kaosAmount = getRowAmount(kaosFound, true);
             const kaosBadge = isKaosPaid ? 'bg-[#dcfce7] text-[#166534] border border-[#bbf7d0]' : 'bg-[#fee2e2] text-[#991b1b] border border-[#fecaca]';
             
             rows += `
@@ -444,8 +446,8 @@ app.get('/kas', checkAuth, async (req, res) => {
             
             checkboxes += `
             <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="68000" onchange="calcTotal()">
-                <span class="text-sm font-medium">Iuran Kaos (Rp 68.000)</span>
+                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="${kaosAmount}" onchange="calcTotal()">
+                <span class="text-sm font-medium">Iuran Kaos (Rp ${kaosAmount.toLocaleString()})</span>
             </label>`;
         }
 
@@ -478,8 +480,8 @@ app.get('/kas', checkAuth, async (req, res) => {
 
             checkboxes += `
             <label class="flex items-center gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition">
-                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="25000" onchange="calcTotal()">
-                <span class="text-sm font-medium">${displayLabel} (Rp 25.000)</span>
+                <input type="checkbox" class="w-5 h-5 calc-item accent-[#2f6636]" data-price="${rowAmount}" onchange="calcTotal()">
+                <span class="text-sm font-medium">${displayLabel} (Rp ${rowAmount.toLocaleString()})</span>
             </label>`;
         });
 
