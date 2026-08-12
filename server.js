@@ -366,7 +366,7 @@ app.get('/calendar', checkAuth, async (req, res) => {
         </form>
 
         <div class="mt-6">
-            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold">&larr; Kembali ke Beranda</a>
+            <a href="/dashboard" class="inline-flex items-center text-[#2f6636] hover:text-[#1e293b] text-sm font-semibold transition">&larr; Kembali ke Beranda</a>
         </div>`;
 
         res.send(layout('Kalendar Akademik', content));
@@ -475,7 +475,7 @@ app.get('/kas', checkAuth, async (req, res) => {
         <div class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-[#cbd5e1]">
             <div>
                 <h2 class="text-xl sm:text-2xl font-bold text-[#1e293b]">Iuran Kas Siswa</h2>
-                <p class="text-xs sm:text-sm text-[#4b5563] mt-1">💡 Iuran kas kelas adalah <strong>Rp 25.000 / bulan</strong> (Juli 2026 - Juni 2027). Untuk iuran kaos otomatis Rp 71.000 jika tidak ada catatan khusus.</p>
+                <p class="text-xs sm:text-sm text-[#4b5563] mt-1">💡 Iuran kas kelas adalah <strong>Rp 25.000 / bulan</strong> (Juli 2026 - Juni 2027). Dapat dibayarkan perbulan, per 3 bulan, per 6 bulan atau per tahun.</p>
             </div>
             <form method="GET" class="w-full md:w-auto">
                 <select name="period" onchange="this.form.submit()" class="border border-[#cbd5e1] px-4 py-2 rounded-xl text-sm font-medium bg-[#f8fafc] outline-none focus:ring-2 focus:ring-[#2f6636] cursor-pointer w-full md:w-auto">
